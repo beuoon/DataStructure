@@ -3,7 +3,6 @@
 class DataStructure {
 public:
 	DataStructure() : length(0) {
-
 	}
 
 	inline int size() const {
