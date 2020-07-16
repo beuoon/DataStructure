@@ -1,17 +1,15 @@
 #pragma once
 
-#include "DataStructure.hpp"
-
 namespace bon {
 	template <typename T>
-	class list : public DataStructure {
+	class list {
 	private:
 		class node {
 		public:
-			node(T element)
+			node(const T& element)
 				: node(element, nullptr, nullptr) {
 			}
-			node(T element, node *prev, node *next)
+			node(const T& element, node *prev, node *next)
 				: element(element) {
 				this->prev = prev;
 				this->next = next;
@@ -27,70 +25,79 @@ namespace bon {
 			iterator() :
 				iterator(nullptr, nullptr, nullptr) {
 			}
-			iterator(node *target) :
-				iterator(target, target->prev, target->next) {
+			iterator(node *curr) :
+				iterator(curr, curr->prev, curr->next) {
 			}
-			iterator(node *target, node *prev, node *next) {
-				this->target = target;
+			iterator(node *curr, node *prev, node *next) {
+				this->curr = curr;
 				this->prev = prev;
 				this->next = next;
 			}
 			
-			iterator& operator++() {
-				target = next;
-				setPtrs();
+			iterator &operator++() {
+				prev = curr;
+				curr = next;
+				if (curr != nullptr) next = curr->next;
 				return *this;
 			}
 			const iterator operator++(int) {
-				iterator result = iterator(target);
-				target = next;
-				setPtrs();
+				iterator result(*this);
+				++(*this);
 				return result;
 			}
 			iterator &operator--() {
-				target = prev;
-				setPtrs();
+				next = curr;
+				curr = prev;
+				if (curr != nullptr) prev = curr->prev;
 				return *this;
 			}
 			const iterator operator--(int) {
-				iterator result = *this;
-				target = prev;
-				setPtrs();
+				iterator result(*this);
+				--(*this);
 				return result;
 			}
 
+			iterator operator+=(size_t amount) {
+
+			}
+			iterator operator+(size_t amount) const {
+
+			}
+			iterator operator-=(size_t amount) {
+
+			}
+			iterator operator-(size_t amount) const {
+
+			}
+
 			bool operator==(const iterator &iter) const {
-				return this->target == iter.target;
+				return this->curr == iter.curr;
 			}
 			bool operator!=(const iterator &iter) const {
 				return !(*this == iter);
 			}
 
 			T &operator*() const {
-				return target->element;
+				return curr->element;
 			}
 			T *operator->() const {
-				return &(target->element);
-			}
-
-		private:
-			inline void setPtrs() {
-				if (target != nullptr) {
-					prev = target->prev;
-					next = target->next;
-				}
+				return &(curr->element);
 			}
 
 		public:
 			node *prev, *next;
-			node *target;
+			node *curr;
 		};
 
 	public:
-		list() : DataStructure(), head(nullptr), tail(nullptr) {
+		list() : length(0), head(nullptr), tail(nullptr) {
 		}
 		list(std::initializer_list<T> initList) : list() {
 			assign(initList);
+		}
+		template <class _Iter>
+		list(const _Iter &first, const _Iter &last) : list() {
+			assign(first, last);
 		}
 
 		const T &front() const {
@@ -104,13 +111,14 @@ namespace bon {
 			return tail->element;
 		}
 
-		void assign(size_t count, const T& value) {
+		void assign(size_t count, const T &value) {
 			clear();
 
 			while (count--)
 				push_back(value);
 		}
-		void assign(const iterator &first, const iterator& last) {
+		template <class _Iter>
+		void assign(const _Iter &first, const _Iter &last) {
 			clear();
 
 			insert(begin(), first, last);
@@ -125,7 +133,7 @@ namespace bon {
 			}
 		}
 
-		void push_front(const T& value) {
+		void push_front(const T &value) {
 			if (empty()) {
 				node *newNode = new node(value);
 				head = tail = newNode;
@@ -138,7 +146,7 @@ namespace bon {
 
 			length++;
 		}
-		void push_back(const T& value) {
+		void push_back(const T &value) {
 			if (empty()) {
 				node *newNode = new node(value);
 				head = tail = newNode;
@@ -172,7 +180,6 @@ namespace bon {
 
 			node *target = tail;
 			tail = tail->prev;
-			tail->next = nullptr;
 			delete target;
 
 			if (tail != nullptr)
@@ -199,7 +206,7 @@ namespace bon {
 
 			return iter;
 		}
-		iterator find(const iterator& where, const T &value) const {
+		iterator find(const iterator &where, const T &value) const {
 			iterator iter = where;
 
 			while (iter != end()) {
@@ -220,15 +227,15 @@ namespace bon {
 			}
 		}
 
-		iterator insert(const iterator& where, const T& value) {
-			node *newNode = new node(value, where.prev, where.target);
-			node *nextNode = where.target;
+		iterator insert(const iterator &where, const T &value) {
+			node *newNode = new node(value, where.prev, where.curr);
+			node *nextNode = where.curr;
 			iterator nextIter;
 
 			if (where.prev != nullptr)
 				where.prev->next = newNode;
-			if (where.target != nullptr)
-				where.target->prev = newNode;
+			if (where.curr != nullptr)
+				where.curr->prev = newNode;
 
 			if (where == begin())
 				head = newNode;
@@ -240,7 +247,8 @@ namespace bon {
 
 			return nextIter;
 		}
-		iterator insert(const iterator &where, const iterator& first, const iterator& last) {
+		template <class _Iter>
+		iterator insert(const iterator &where, const _Iter &first, const _Iter &last) {
 			iterator iter = where;
 
 			for (auto targetIter = first; targetIter != last; targetIter++)
@@ -249,7 +257,7 @@ namespace bon {
 			return iter;
 		}
 		iterator erase(const iterator where) {
-			node *target = where.target, *nextNode = where.next;
+			node *target = where.curr, *nextNode = where.next;
 			iterator nextIter;
 
 			if (where.prev != nullptr)
@@ -269,7 +277,7 @@ namespace bon {
 
 			return nextIter;
 		}
-		iterator erase(const iterator first, const iterator last) {
+		iterator erase(const iterator &first, const iterator &last) {
 			iterator iter = first;
 
 			while (iter != last)
@@ -278,6 +286,12 @@ namespace bon {
 			return iter;
 		}
 
+		inline int size() const {
+			return length;
+		}
+		inline bool empty() const {
+			return length == 0;
+		}
 		void clear() {
 			node *curr = head, *next;
 			while (curr != nullptr) {
@@ -292,5 +306,6 @@ namespace bon {
 
 	private:
 		node *head, *tail;
+		int length;
 	};
 }

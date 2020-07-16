@@ -18,7 +18,16 @@
     <ClInclude Include="list.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="DataStructure.hpp">
+    <ClInclude Include="stack.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="queue.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="AVLTree.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="set.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,6 +1,4 @@
-#include "pch.h"
 #include "CppUnitTest.h"
-
 #include "../DataStructure/list.hpp"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -22,7 +20,6 @@ namespace UnitTest {
 			for (auto iter = actualList.begin(); iter != actualList.end(); iter++, number++)
 				Assert::AreEqual(number, *iter);
 		}
-
 		TEST_METHOD(checkAssignCountValue) {
 			bon::list<int> actualList;
 			int count = 3, value = 1;
@@ -88,6 +85,11 @@ namespace UnitTest {
 
 			Assert::AreEqual(size-1, actualList.size());
 			Assert::AreEqual(arr[size-2], actualList.back());
+
+			actualList.pop_back();
+			actualList.pop_back();
+
+			Assert::AreEqual(0, actualList.size());
 		}
 		TEST_METHOD(checkPopFront) {
 			bon::list<int> actualList;
@@ -100,6 +102,11 @@ namespace UnitTest {
 
 			Assert::AreEqual(size-1, actualList.size());
 			Assert::AreEqual(arr[1], actualList.front());
+
+			actualList.pop_back();
+			actualList.pop_back();
+
+			Assert::AreEqual(0, actualList.size());
 		}
 
 		TEST_METHOD(checkFrontIfEmptyList) {

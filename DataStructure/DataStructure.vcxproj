@@ -139,8 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="DataStructure.hpp" />
+    <ClInclude Include="AVLTree.hpp" />
     <ClInclude Include="list.hpp" />
+    <ClInclude Include="queue.hpp" />
+    <ClInclude Include="set.hpp" />
+    <ClInclude Include="stack.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
