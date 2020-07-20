@@ -182,14 +182,13 @@ namespace bon {
 			root = nullptr;
 			length = 0;
 		}
-		AVLTree(std::initializer_list<T> initList) : AVLTree(initList.begin(), initList.end()) {
+		AVLTree(std::initializer_list<T> initList, bool bAllowDuplication = true) : AVLTree(initList.begin(), initList.end(), bAllowDuplication) {
 		}
 		template <class _Iter, std::enable_if_t<std::_Is_iterator_v<_Iter>, int> = 0>
-		AVLTree(const _Iter &first, const _Iter &last) : AVLTree() {
+		AVLTree(const _Iter &first, const _Iter &last, bool bAllowDuplication = true) : AVLTree(bAllowDuplication) {
 			insert(first, last);
 		}
-		AVLTree(const AVLTree &tree) : AVLTree(tree.bAllowDuplication) {
-			insert(tree.begin(), tree.end());
+		AVLTree(const AVLTree &tree) : AVLTree(tree.begin(), tree.end(), tree.bAllowDuplication) {
 		}
 		~AVLTree() {
 			clear();
@@ -197,6 +196,7 @@ namespace bon {
 
 		const AVLTree &operator=(const AVLTree &target) {
 			clear();
+			bAllowDuplication = target.bAllowDuplication;
 			insert(target.begin(), target.end());
 			return *this;
 		}
@@ -539,9 +539,9 @@ namespace bon {
 		}
 
 	protected:
-		const Compare &compare;
+		const Compare compare;
 		node *root;
 		int length;
-		const bool bAllowDuplication;
+		bool bAllowDuplication;
 	};
 }

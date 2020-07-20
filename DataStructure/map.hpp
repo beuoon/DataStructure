@@ -24,12 +24,12 @@ namespace bon {
 
 		map() : Tree(ALLOW_DUPLICATION) {
 		}
-		map(std::initializer_list<T> initList) : Tree(initList.begin(), initList.end()) {
+		map(std::initializer_list<T> initList) : Tree(initList.begin(), initList.end(), ALLOW_DUPLICATION) {
 		}
 		template <class _Iter, std::enable_if_t<std::_Is_iterator_v<_Iter>, int> = 0>
-		map(const _Iter &first, const _Iter &last) : Tree(first, last) {
+		map(const _Iter &first, const _Iter &last) : Tree(first, last, ALLOW_DUPLICATION) {
 		}
-		map(const map &tree) : Tree(tree) {
+		map(const map &tree) : Tree(tree.begin(), tree.end(), ALLOW_DUPLICATION) {
 		}
 
 		iterator find(const K &value) const {
