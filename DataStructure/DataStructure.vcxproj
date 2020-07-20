@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClInclude Include="AVLTree.hpp" />
     <ClInclude Include="list.hpp" />
+    <ClInclude Include="map.hpp" />
     <ClInclude Include="queue.hpp" />
     <ClInclude Include="set.hpp" />
     <ClInclude Include="stack.hpp" />
