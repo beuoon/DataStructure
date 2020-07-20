@@ -38,12 +38,61 @@ namespace bon {
 	public:
 		class iterator {
 		public:
+			using iterator_category = std::bidirectional_iterator_tag;
+			using value_type		= T;
+			using difference_type	= int;
+			using pointer			= T *;
+			using reference			= T &;
+
 			iterator() : iterator(nullptr, nullptr, nullptr) {
 			}
-			iterator(node *curr, node *prev, node *next) {
+			iterator(node *curr) {
 				this->curr = curr;
-				this->prev = prev;
-				this->next = next;
+
+				if (curr == nullptr) {
+					prev = nullptr;
+					next = nullptr;
+					return;
+				}
+
+				if (curr->left != nullptr)
+					prev = GetMaxNode(curr->left);
+				else {
+					node *target = curr;
+					node *parent = target->parent;
+
+					while (parent != nullptr) {
+						if (parent->left == target) {
+							target = parent;
+							parent = target->parent;
+						}
+						else
+							break;
+					}
+
+					prev = parent;
+				}
+
+				if (curr->right != nullptr)
+					next = GetMinNode(curr->right);
+				else {
+					node *target = curr;
+					node *parent = target->parent;
+
+					while (parent != nullptr) {
+						if (parent->right == target) {
+							target = parent;
+							parent = target->parent;
+						}
+						else
+							break;
+					}
+
+					next = parent;
+				}
+			}
+			iterator(node *curr, node *prev, node *next)
+				: curr(curr), prev(prev), next(next) {
 			}
 			
 			iterator &operator++() {
@@ -109,19 +158,6 @@ namespace bon {
 				return result;
 			}
 
-			iterator operator+=(size_t amount) {
-
-			}
-			iterator operator+(size_t amount) const {
-
-			}
-			iterator operator-=(size_t amount) {
-
-			}
-			iterator operator-(size_t amount) const {
-
-			}
-
 			bool operator==(const iterator &iter) const {
 				return this->curr == iter.curr;
 			}
@@ -142,25 +178,118 @@ namespace bon {
 		};
 
 	public:
-		AVLTree() : compare(Compare()) {
+		AVLTree(bool bAllowDuplication = true) : compare(Compare()), bAllowDuplication(bAllowDuplication) {
 			root = nullptr;
 			length = 0;
 		}
+		AVLTree(std::initializer_list<T> initList) : AVLTree(initList.begin(), initList.end()) {
+		}
+		template <class _Iter, std::enable_if_t<std::_Is_iterator_v<_Iter>, int> = 0>
+		AVLTree(const _Iter &first, const _Iter &last) : AVLTree() {
+			insert(first, last);
+		}
+		AVLTree(const AVLTree &tree) : AVLTree(tree.bAllowDuplication) {
+			insert(tree.begin(), tree.end());
+		}
+		~AVLTree() {
+			clear();
+		}
 
-		void insert(const T &value) {
+		const AVLTree &operator=(const AVLTree &target) {
+			clear();
+			insert(target.begin(), target.end());
+			return *this;
+		}
+
+		iterator begin() const {
+			return !empty() ? iterator(GetMinNode(root)) : end();
+		}
+		iterator end() const {
+			node *prev = GetMaxNode(root);
+			return iterator(nullptr, prev, nullptr);
+		}
+
+		virtual iterator find(const T &value) const {
+			node *curr = nullptr;
+			node *next = root;
+
+			while (next != nullptr) {
+				curr = next;
+
+				bool bEqualCurr = areEqual(curr->value, value);
+
+				if (bEqualCurr) {
+					bool bEqualLeftChild = (curr->left != nullptr && areEqual(curr->left->value, value));
+
+					if (bEqualLeftChild)
+						next = curr->left;
+					else
+						break;
+				}
+				else {
+					next = (compare(value, curr->value)) ? curr->left : curr->right;
+				}
+			}
+
+			bool bExistValue = (curr != nullptr && areEqual(curr->value, value));
+
+			return bExistValue ? iterator(curr) : end();
+		}
+		virtual iterator lower_bound(const T &value) const {
+			node *curr = nullptr;
+			node *next = root;
+
+			while (next != nullptr) {
+				curr = next;
+
+				bool bEqualCurr = areEqual(curr->value, value);
+
+				if (bEqualCurr) {
+					bool bEqualRightChild = (curr->right != nullptr && areEqual(curr->right->value, value));
+
+					if (bEqualRightChild)
+						next = curr->right;
+					else
+						break;
+				}
+				else
+					next = (compare(value, curr->value)) ? curr->left : curr->right;
+			}
+
+			iterator iter;
+			if (curr != nullptr) {
+				iter = iterator(curr);
+				if (!areEqual(curr->value, value) && compare(curr->value, value)) // curr->value < value
+					++iter;
+			}
+			else
+				iter = end();
+
+			return iter;
+		}
+		virtual iterator upper_bound(const T &value) const {
+			auto iter = lower_bound(value);
+			if (areEqual(*iter, value))
+				++iter;
+			return iter;
+		}
+
+		virtual void insert(const T &value) {
 			if (root == nullptr) {
 				root = new node(value, nullptr);
 				return;
 			}
 
+			// 삽입할 위치 탐색
 			node *curr = nullptr;
 			node *next = root;
 			while (next != nullptr) {
 				curr = next;
-				if (value == curr->value) return; // 동일한 값이 있으면 종료
+				if (!bAllowDuplication && areEqual(curr->value, value)) return; // 중복 방지
 				next = (compare(value, curr->value)) ? curr->left : curr->right;
 			}
 
+			// 노드 생성 및 삽입
 			node *newNode = new node(value, curr);
 			if (compare(value, curr->value))
 				curr->left = newNode;
@@ -168,6 +297,7 @@ namespace bon {
 				curr->right = newNode;
 			length++;
 
+			// 트리 밸런스 유지
 			node *target = curr;
 			while ((target = GetUnbalancedNodeWithRecalcHeight(target)) != nullptr) {
 				target = MaintainBalance(target);
@@ -175,16 +305,23 @@ namespace bon {
 					root = target;
 			}
 		}
-		void erase(const T &value) {
-			node *curr = root;
-			while (curr != nullptr) {
-				if (curr->value == value) break;
-				curr = compare(value, curr->value) ? curr->left : curr->right;
-			}
+		template <class _Iter, std::enable_if_t<std::_Is_iterator_v<_Iter>, int> = 0>
+		void insert(const _Iter &first, const _Iter &last) {
+			for (auto targetIter = first; targetIter != last; targetIter++)
+				insert(*targetIter);
+		}
 
-			if (curr == nullptr) // 찾는 값이 없으면 종료
-				return;
+		virtual void erase(const T &value) {
+			iterator iter = find(value);
 
+			while (iter != end() && areEqual(*iter, value))
+				iter = erase(iter);
+		}
+		virtual iterator erase(const iterator where) {
+			node *nextNode = where.next;
+			node *curr = where.curr;
+
+			// 삭제할 노드를 단말 노드로 이동
 			while (true) {
 				bool isLeaf = curr->left == nullptr && curr->right == nullptr;
 				if (isLeaf) break;
@@ -200,32 +337,34 @@ namespace bon {
 					root = swapTarget;
 			}
 
+			// 삭제할 노드의 부모 자식값 설정
 			node *parent = curr->parent;
-			((parent->left == curr) ? parent->left : parent->right) = nullptr;
+			if (parent == nullptr)
+				root = nullptr;
+			else {
+				node *&child = ((parent->left == curr) ? parent->left : parent->right);
+				child = nullptr;
+			}
 
+			// 노드 삭제
 			delete curr;
 			length--;
 
+			// 트리 밸런스 유지
 			node *target = parent;
 			while ((target = GetUnbalancedNodeWithRecalcHeight(target)) != nullptr) {
 				target = MaintainBalance(target);
 				if (target->parent == nullptr)
 					root = target;
 			}
-		}
 
-		iterator begin() const {
-			if (!empty()) {
-				node *curr = GetMinNode(root);
-				node *next = (curr->right != nullptr) ? curr->right : curr->parent;
-				return iterator(curr, nullptr, next);
-			}
-			else
-				return end();
+			return iterator(nextNode);
 		}
-		iterator end() const {
-			node *prev = GetMaxNode(root);
-			return iterator(nullptr, prev, nullptr);
+		virtual iterator erase(const iterator &first, const iterator &last) {
+			iterator iter;
+			for (iter = first; iter != last; )
+				iter = erase(iter);
+			return iter;
 		}
 
 		inline int size() const {
@@ -235,10 +374,10 @@ namespace bon {
 			return length == 0;
 		}
 		void clear() {
-			length = 0;
+			erase(begin(), end());
 		}
 
-	private:
+	protected:
 		static node *MaintainBalance(node *target) {
 			node *x, *y, *z;
 			node *a, *b, *c;
@@ -345,11 +484,17 @@ namespace bon {
 		}
 
 		static node *GetMinNode(node *target) {
+			if (target == nullptr)
+				return nullptr;
+
 			while (target->left != nullptr)
 				target = target->left;
 			return target;
 		}
 		static node *GetMaxNode(node *target) {
+			if (target == nullptr)
+				return nullptr;
+
 			while (target->right != nullptr)
 				target = target->right;
 			return target;
@@ -389,9 +534,14 @@ namespace bon {
 			if (!isRightChild && n1_rc != nullptr) n1_rc->parent = n2;
 		}
 
+		bool areEqual(const T &value1, const T &value2) const {
+			return !(compare(value1, value2) ^ compare(value2, value1));
+		}
+
 	protected:
 		const Compare &compare;
 		node *root;
 		int length;
+		const bool bAllowDuplication;
 	};
 }
