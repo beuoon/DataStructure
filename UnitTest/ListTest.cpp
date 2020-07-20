@@ -13,22 +13,47 @@ namespace UnitTest {
 				Assert::AreEqual(*exptectedIter, *actualIter);
 		}
 
-		TEST_METHOD(checkInit) {
+		TEST_METHOD(checkConstructor) {
 			bon::list<int> actualList({ 1,2,3,4 });
 
 			int number = 1;
 			for (auto iter = actualList.begin(); iter != actualList.end(); iter++, number++)
 				Assert::AreEqual(number, *iter);
 		}
-		TEST_METHOD(checkAssignCountValue) {
-			bon::list<int> actualList;
+		TEST_METHOD(checkConstructorWithCountValue) {
 			int count = 3, value = 1;
-
-			actualList.assign(count, value);
+			bon::list<int> actualList(count, value);
 
 			Assert::AreEqual(count, actualList.size());
 			for (auto iter = actualList.begin(); iter != actualList.end(); iter++)
 				Assert::AreEqual(value, *iter);
+		}
+		TEST_METHOD(checkCopyConstructor) {
+			bon::list<int> expectedList({ 1,2,3,4 });
+			bon::list<int> actualList;
+			{
+				bon::list<int> tempList(expectedList);
+				actualList = tempList;
+			}
+
+			AssertEqual(expectedList, actualList);
+		}
+
+		TEST_METHOD(checkOperatorAssign) {
+			bon::list<int> expectedList({ 1,2,3,4 });
+			bon::list<int> actualList = expectedList;
+
+			AssertEqual(expectedList, actualList);
+		}
+
+		TEST_METHOD(checkAssignInitializerList) {
+			bon::list<int> actualList;
+
+			actualList.assign({ 1, 2, 3, 4 });
+
+			int number = 1;
+			for (auto iter = actualList.begin(); iter != actualList.end(); iter++, number++)
+				Assert::AreEqual(number, *iter);
 		}
 		TEST_METHOD(checkAssignRange) {
 			bon::list<int> expectedList({ 1, 2, 3, 4 });
@@ -38,14 +63,34 @@ namespace UnitTest {
 
 			AssertEqual(expectedList, actualList);
 		}
-		TEST_METHOD(checkAssignInitializerList) {
+
+		TEST_METHOD(checkFrontIfEmptyList) {
+			bon::list<int> actualList;
+			auto func = [actualList] { actualList.front(); };
+
+			Assert::ExpectException<std::runtime_error *>(func);
+		}
+		TEST_METHOD(checkFrontIfNotEmptyList) {
 			bon::list<int> actualList;
 
-			actualList.assign({ 1, 2, 3, 4 });
+			actualList.push_back(1);
+			actualList.push_back(2);
 
-			int number = 1;
-			for (auto iter = actualList.begin(); iter != actualList.end(); iter++, number++)
-				Assert::AreEqual(number, *iter);
+			Assert::AreEqual(1, actualList.front());
+		}
+		TEST_METHOD(checkBackIfEmptyList) {
+			bon::list<int> actualList;
+			auto func = [actualList] { actualList.back(); };
+
+			Assert::ExpectException<std::runtime_error *>(func);
+		}
+		TEST_METHOD(checkBackIfNotEmptyList) {
+			bon::list<int> actualList;
+
+			actualList.push_back(1);
+			actualList.push_back(2);
+
+			Assert::AreEqual(2, actualList.back());
 		}
 
 		TEST_METHOD(checkPushBack) {
@@ -109,35 +154,6 @@ namespace UnitTest {
 			Assert::AreEqual(0, actualList.size());
 		}
 
-		TEST_METHOD(checkFrontIfEmptyList) {
-			bon::list<int> actualList;
-			auto func = [actualList] { actualList.front(); };
-
-			Assert::ExpectException<std::runtime_error *>(func);
-		}
-		TEST_METHOD(checkFrontIfNotEmptyList) {
-			bon::list<int> actualList;
-
-			actualList.push_back(1);
-			actualList.push_back(2);
-
-			Assert::AreEqual(1, actualList.front());
-		}
-		TEST_METHOD(checkBackIfEmptyList) {
-			bon::list<int> actualList;
-			auto func = [actualList] { actualList.back(); };
-
-			Assert::ExpectException<std::runtime_error *>(func);
-		}
-		TEST_METHOD(checkBackIfNotEmptyList) {
-			bon::list<int> actualList;
-
-			actualList.push_back(1);
-			actualList.push_back(2);
-
-			Assert::AreEqual(2, actualList.back());
-		}
-
 		TEST_METHOD(checkFind) {
 			bon::list<int> actualList({ 1, 2, 3, 4 });
 			int expectedNum = 3;
@@ -150,9 +166,11 @@ namespace UnitTest {
 			bon::list<int> actualList({ 1, 2, 3, 4, 5, 6, 7 });
 			int expectedNum = 3;
 
-			auto iter = actualList.find(actualList.find(4), 3);
+			auto iterExpectedNum = actualList.find(actualList.find(2), 3);
+			auto iterExpectedEnd = actualList.find(actualList.find(4), 3);
 
-			Assert::IsTrue(actualList.end() == iter);
+			Assert::AreEqual(*iterExpectedNum, expectedNum);
+			Assert::IsTrue(actualList.end() == iterExpectedEnd);
 		}
 		TEST_METHOD(checkRemove) {
 			bon::list<int> actualList({ 1, 2, 3, 4, 5, 6, 7, 2, 3, 4, 5, 6, 2, 3, 4 });

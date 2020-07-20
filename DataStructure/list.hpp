@@ -22,16 +22,20 @@ namespace bon {
 	public:
 		class iterator {
 		public:
+			using iterator_category	= std::bidirectional_iterator_tag;
+			using value_type		= T;
+			using difference_type	= int;
+			using pointer			= T *;
+			using reference			= T &;
+
 			iterator() :
 				iterator(nullptr, nullptr, nullptr) {
 			}
 			iterator(node *curr) :
 				iterator(curr, curr->prev, curr->next) {
 			}
-			iterator(node *curr, node *prev, node *next) {
-				this->curr = curr;
-				this->prev = prev;
-				this->next = next;
+			iterator(node *curr, node *prev, node *next) :
+				curr(curr), prev(prev), next(next) {
 			}
 			
 			iterator &operator++() {
@@ -55,19 +59,6 @@ namespace bon {
 				iterator result(*this);
 				--(*this);
 				return result;
-			}
-
-			iterator operator+=(size_t amount) {
-
-			}
-			iterator operator+(size_t amount) const {
-
-			}
-			iterator operator-=(size_t amount) {
-
-			}
-			iterator operator-(size_t amount) const {
-
 			}
 
 			bool operator==(const iterator &iter) const {
@@ -95,9 +86,24 @@ namespace bon {
 		list(std::initializer_list<T> initList) : list() {
 			assign(initList);
 		}
-		template <class _Iter>
+		template <class _Iter, std::enable_if_t<std::_Is_iterator_v<_Iter>, int> = 0>
 		list(const _Iter &first, const _Iter &last) : list() {
 			assign(first, last);
+		}
+		list(size_t count, const T &value) : list() {
+			while (count--)
+				push_back(value);
+		}
+		list(const list &target) : list() {
+			assign(target.begin(), target.end());
+		}
+		~list() {
+			clear();
+		}
+
+		const list &operator=(const list &target) {
+			assign(target.begin(), target.end());
+			return *this;
 		}
 
 		const T &front() const {
@@ -111,26 +117,14 @@ namespace bon {
 			return tail->element;
 		}
 
-		void assign(size_t count, const T &value) {
-			clear();
-
-			while (count--)
-				push_back(value);
-		}
-		template <class _Iter>
+		template <class _Iter, std::enable_if_t<std::_Is_iterator_v<_Iter>, int> = 0>
 		void assign(const _Iter &first, const _Iter &last) {
 			clear();
 
 			insert(begin(), first, last);
 		}
 		void assign(std::initializer_list<T> initList) {
-			clear();
-
-			auto iter = initList.begin();
-			while (iter != initList.end()) {
-				push_back(*iter);
-				++iter;
-			}
+			assign(initList.begin(), initList.end());
 		}
 
 		void push_front(const T &value) {
@@ -217,15 +211,6 @@ namespace bon {
 
 			return iter;
 		}
-		void remove(const T &value) {
-			iterator iter = begin();
-			iter = find(iter, value);
-
-			while (iter != end()) {
-				iter = erase(iter);
-				iter = find(iter, value);
-			}
-		}
 
 		iterator insert(const iterator &where, const T &value) {
 			node *newNode = new node(value, where.prev, where.curr);
@@ -247,7 +232,7 @@ namespace bon {
 
 			return nextIter;
 		}
-		template <class _Iter>
+		template <class _Iter, std::enable_if_t<std::_Is_iterator_v<_Iter>, int> = 0>
 		iterator insert(const iterator &where, const _Iter &first, const _Iter &last) {
 			iterator iter = where;
 
@@ -256,6 +241,7 @@ namespace bon {
 
 			return iter;
 		}
+		
 		iterator erase(const iterator where) {
 			node *target = where.curr, *nextNode = where.next;
 			iterator nextIter;
@@ -286,6 +272,16 @@ namespace bon {
 			return iter;
 		}
 
+		void remove(const T &value) {
+			iterator iter = begin();
+			iter = find(iter, value);
+
+			while (iter != end()) {
+				iter = erase(iter);
+				iter = find(iter, value);
+			}
+		}
+
 		inline int size() const {
 			return length;
 		}
@@ -293,15 +289,7 @@ namespace bon {
 			return length == 0;
 		}
 		void clear() {
-			node *curr = head, *next;
-			while (curr != nullptr) {
-				next = curr->next;
-				delete curr;
-				curr = next;
-			}
-
-			head = tail = nullptr;
-			length = 0;
+			erase(begin(), end());
 		}
 
 	private:
