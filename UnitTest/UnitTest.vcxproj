@@ -164,7 +164,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AVLTreeTest.cpp" />
     <ClCompile Include="ListTest.cpp" />
   </ItemGroup>
   <ItemGroup>
